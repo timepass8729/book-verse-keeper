@@ -5,5 +5,5 @@ export interface Book {
   author: string;
   description?: string;
   userId: string;
-  createdAt?: Date;
+  createdAt?: Date | any; // Updated to accept Firebase's FieldValue type
 }
