@@ -30,6 +30,7 @@ const Dashboard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | undefined>(undefined);
   const [deletingBookId, setDeletingBookId] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -65,10 +66,12 @@ const Dashboard = () => {
       const newBook = await addBook({
         ...bookData,
         userId: currentUser.uid,
-      });
+      }, imageFile);
       
       setBooks([...books, newBook as Book]);
       setIsDialogOpen(false);
+      setImageFile(null); // Reset image file after submission
+      
       toast({
         title: "Book added successfully",
         description: `"${bookData.title}" has been added to your collection.`,
@@ -86,6 +89,7 @@ const Dashboard = () => {
 
   const handleEditBook = (book: Book) => {
     setEditingBook(book);
+    setImageFile(null); // Reset image file when editing a book
     setIsDialogOpen(true);
   };
 
@@ -97,14 +101,15 @@ const Dashboard = () => {
       const updatedBook = await updateBook(editingBook.id, {
         ...bookData,
         userId: editingBook.userId,
-      });
+      }, imageFile);
       
       setBooks(books.map(book => 
-        book.id === editingBook.id ? { ...book, ...bookData } : book
+        book.id === editingBook.id ? { ...book, ...bookData, imageUrl: updatedBook.imageUrl } : book
       ));
       
       setIsDialogOpen(false);
       setEditingBook(undefined);
+      setImageFile(null); // Reset image file after submission
       
       toast({
         title: "Book updated successfully",
@@ -130,7 +135,10 @@ const Dashboard = () => {
     if (!deletingBookId) return;
     
     try {
-      await deleteBook(deletingBookId);
+      // Find the book to get its imageUrl
+      const bookToDelete = books.find(book => book.id === deletingBookId);
+      
+      await deleteBook(deletingBookId, bookToDelete?.imageUrl);
       
       setBooks(books.filter(book => book.id !== deletingBookId));
       
@@ -148,6 +156,10 @@ const Dashboard = () => {
       setIsAlertDialogOpen(false);
       setDeletingBookId(null);
     }
+  };
+
+  const handleImageChange = (file: File | null) => {
+    setImageFile(file);
   };
 
   return (
@@ -180,7 +192,10 @@ const Dashboard = () => {
       <Dialog open={isDialogOpen} onOpenChange={(open) => {
         if (!isSubmitting) {
           setIsDialogOpen(open);
-          if (!open) setEditingBook(undefined);
+          if (!open) {
+            setEditingBook(undefined);
+            setImageFile(null);
+          }
         }
       }}>
         <DialogContent className="sm:max-w-[500px]">
@@ -194,6 +209,7 @@ const Dashboard = () => {
             onSubmit={editingBook ? handleUpdateBook : handleAddBook}
             onCancel={() => setIsDialogOpen(false)}
             isSubmitting={isSubmitting}
+            onImageChange={handleImageChange}
           />
         </DialogContent>
       </Dialog>

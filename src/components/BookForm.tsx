@@ -12,18 +12,19 @@ interface BookFormProps {
   onSubmit: (book: Omit<Book, "id" | "userId" | "createdAt">) => Promise<void>;
   onCancel: () => void;
   isSubmitting: boolean;
+  onImageChange: (file: File | null) => void;
 }
 
 const BookForm: React.FC<BookFormProps> = ({ 
   book, 
   onSubmit, 
   onCancel, 
-  isSubmitting 
+  isSubmitting,
+  onImageChange
 }) => {
   const [title, setTitle] = useState(book?.title || "");
   const [author, setAuthor] = useState(book?.author || "");
   const [description, setDescription] = useState(book?.description || "");
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>(book?.imageUrl || "");
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -53,7 +54,8 @@ const BookForm: React.FC<BookFormProps> = ({
         return;
       }
       
-      setImageFile(file);
+      // Pass the file to parent component
+      onImageChange(file);
       
       // Create a preview URL
       const reader = new FileReader();
@@ -81,7 +83,7 @@ const BookForm: React.FC<BookFormProps> = ({
         title,
         author,
         description: description.trim() ? description : undefined,
-        imageUrl: imageFile ? 'pending-upload' : book?.imageUrl, // We'll replace this with actual URL after upload
+        imageUrl: book?.imageUrl,
       });
     } catch (error) {
       console.error("Error submitting book:", error);
@@ -136,7 +138,7 @@ const BookForm: React.FC<BookFormProps> = ({
                 size="sm"
                 className="absolute right-1 top-1 h-6 w-6 rounded-full p-0 bg-white/80 hover:bg-white text-gray-700"
                 onClick={() => {
-                  setImageFile(null);
+                  onImageChange(null);
                   setImagePreview("");
                   if (fileInputRef.current) {
                     fileInputRef.current.value = "";
